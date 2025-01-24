@@ -21,12 +21,9 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    else
+    while (fgets(buffer, 255, pFile) != NULL)
     {
-        while (fgets(buffer, 255, pFile) != NULL)
-        {
-            printf("%s", buffer);
-        }
+        printf("%s", buffer);
     }
 
     fclose(pFile);
