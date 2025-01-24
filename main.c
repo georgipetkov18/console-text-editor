@@ -1,18 +1,13 @@
 #include <stdio.h>
 
-int main()
+int main(int argc, char *argv[])
 {
-    printf("Enter file path: ");
-
-    char filePath[1024];
-    scanf("%s", &filePath);
-
-    FILE *pFile = fopen(filePath, "r");
+    FILE *pFile = fopen(argv[1], "r");
     char buffer[255];
 
     if (pFile == NULL)
     {
-        printf("Unable to find file at: %s", filePath);
+        printf("Unable to find file at: %s", argv[1]);
     }
 
     else
