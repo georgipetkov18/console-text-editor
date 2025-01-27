@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <conio.h>
 
@@ -11,7 +10,7 @@ enum ArrowKey
     Right = 77
 };
 
-void terminateProgramHandler(int sig_num);
+void terminateProgram();
 void moveCursor(enum ArrowKey key);
 
 int main(int argc, char *argv[])
@@ -38,20 +37,31 @@ int main(int argc, char *argv[])
 
     fclose(pFile);
 
-    signal(SIGINT, terminateProgramHandler);
-
     int key;
+
+    // Save cursor positon at the end of the text
+    printf("\033[s");
+
     while (1)
     {
         key = getch();
+
+        // CTRL + C
+        if (key == 3)
+        {
+            terminateProgram(key);
+        }
+        
         moveCursor(key);
     }
 
     return EXIT_SUCCESS;
 }
 
-void terminateProgramHandler(int sig_num)
+void terminateProgram()
 {
+    // Move cursor to the end of the text
+    printf("\033[u");
     printf("\nProgram terminated by Ctrl+C\n");
     exit(EXIT_SUCCESS);
 }
