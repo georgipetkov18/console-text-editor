@@ -2,16 +2,17 @@
 #include <stdlib.h>
 #include <conio.h>
 
-enum ArrowKey
+enum Key
 {
     Up = 72,
     Down = 80,
     Left = 75,
-    Right = 77
+    Right = 77,
+    CtrlC = 3,
 };
 
 void terminateProgram();
-void moveCursor(enum ArrowKey key);
+void moveCursor(enum Key key);
 
 int main(int argc, char *argv[])
 {
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
         key = getch();
 
         // CTRL + C
-        if (key == 3)
+        if (key == CtrlC)
         {
             terminateProgram(key);
         }
@@ -66,7 +67,7 @@ void terminateProgram()
     exit(EXIT_SUCCESS);
 }
 
-void moveCursor(enum ArrowKey key)
+void moveCursor(enum Key key)
 {
     char directionChar;
     switch (key)
