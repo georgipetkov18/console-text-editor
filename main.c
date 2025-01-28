@@ -1,18 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
-
-enum Key
-{
-    Up = 72,
-    Down = 80,
-    Left = 75,
-    Right = 77,
-    CtrlC = 3,
-};
+#include "appEnums.h"
 
 void terminateProgram();
-void moveCursor(enum Key key);
+void moveCursor(Key key);
 
 int main(int argc, char *argv[])
 {
@@ -49,25 +41,20 @@ int main(int argc, char *argv[])
         // char a = (char)key;
         // printf("%d", key);
 
-        // CTRL + C
         if (key == CtrlC)
         {
             terminateProgram(key);
         }
 
-        // DELETE key
-        if (key == 83)
+        if (key == Delete)
         {
             printf("\033[P");
         }
         
-        // BACKSPACE
-        if (key == 8)
+        if (key == Backspace)
         {
-            /* code */
             printf("\033[1D");
             printf("\033[P");
-
         }
 
         moveCursor(key);
@@ -84,7 +71,7 @@ void terminateProgram()
     exit(EXIT_SUCCESS);
 }
 
-void moveCursor(enum Key key)
+void moveCursor(Key key)
 {
     char directionChar;
     switch (key)
