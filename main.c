@@ -46,13 +46,30 @@ int main(int argc, char *argv[])
     while (1)
     {
         key = getch();
+        // char a = (char)key;
+        // printf("%d", key);
 
         // CTRL + C
         if (key == CtrlC)
         {
             terminateProgram(key);
         }
+
+        // DELETE key
+        if (key == 83)
+        {
+            printf("\033[P");
+        }
         
+        // BACKSPACE
+        if (key == 8)
+        {
+            /* code */
+            printf("\033[1D");
+            printf("\033[P");
+
+        }
+
         moveCursor(key);
     }
 
