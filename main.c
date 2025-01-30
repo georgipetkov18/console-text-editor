@@ -1,10 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
+#include <windows.h>
 #include "appEnums.h"
 
+HANDLE hConsole;
+
 void terminateProgram();
-void moveCursor(Key key);
+void handleKeyInput(Key key);
+void printCharacter(COORD coord, char ch);
+COORD getCursorPosition();
+void setCursorPosition(int x, int y);
 
 int main(int argc, char *argv[])
 {
@@ -23,6 +29,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
     while (fgets(buffer, 255, pFile) != NULL)
     {
         printf("%s", buffer);
@@ -34,30 +42,10 @@ int main(int argc, char *argv[])
 
     // Save cursor positon at the end of the text
     printf("\033[s");
-
     while (1)
     {
         key = getch();
-        // char a = (char)key;
-        // printf("%d", key);
-
-        if (key == CtrlC)
-        {
-            terminateProgram(key);
-        }
-
-        if (key == Delete)
-        {
-            printf("\033[P");
-        }
-        
-        if (key == Backspace)
-        {
-            printf("\033[1D");
-            printf("\033[P");
-        }
-
-        moveCursor(key);
+        handleKeyInput(key);
     }
 
     return EXIT_SUCCESS;
@@ -65,36 +53,95 @@ int main(int argc, char *argv[])
 
 void terminateProgram()
 {
+    CloseHandle(hConsole);
     // Move cursor to the end of the text
     printf("\033[u");
     printf("\nProgram terminated by Ctrl+C\n");
     exit(EXIT_SUCCESS);
 }
 
-void moveCursor(Key key)
+void handleKeyInput(Key key)
 {
-    char directionChar;
+    COORD coord = getCursorPosition();
     switch (key)
     {
     case Up:
-        directionChar = 'A';
+        setCursorPosition(coord.X, coord.Y - 1);
+        // printf("\033[1A");
         break;
 
     case Down:
-        directionChar = 'B';
+        setCursorPosition(coord.X, coord.Y + 1);
+        // printf("\033[1B");
         break;
 
     case Right:
-        directionChar = 'C';
+        setCursorPosition(coord.X + 1, coord.Y);
+        // printf("\033[1C");
         break;
 
     case Left:
-        directionChar = 'D';
+        setCursorPosition(coord.X - 1, coord.Y);
+        // printf("\033[1D");
+        break;
+
+    case CtrlC:
+        terminateProgram();
+        break;
+
+    case Delete:
+        printf("\033[P");
+        break;
+
+    case Backspace:
+        printf("\033[1D");
+        printf("\033[P");
+        break;
+
+    case 224:
+
         break;
 
     default:
+        printCharacter(coord, (char)key);
+        break;
+    }
+}
+
+void printCharacter(COORD coord, char ch)
+{
+    DWORD bytesWritten;
+    // WriteConsoleOutputCharacter(hConsole, &ch, 1, point, NULL);
+    // WriteFile(hConsole, &ch, 1, &bytesWritten, NULL);
+    FillConsoleOutputCharacter(hConsole, ch, 1, coord, &bytesWritten);
+    setCursorPosition(coord.X + 1, coord.Y);
+}
+
+COORD getCursorPosition()
+{
+    CONSOLE_SCREEN_BUFFER_INFO bufferInfo;
+
+    COORD cursorPosition;
+    cursorPosition.X = -10;
+    cursorPosition.Y = -10;
+
+    if (GetConsoleScreenBufferInfo(hConsole, &bufferInfo))
+    {
+        cursorPosition = bufferInfo.dwCursorPosition;
+    }
+    
+    return cursorPosition;
+}
+
+void setCursorPosition(int x, int y)
+{
+    if (x < 0 || y < 0)
+    {
         return;
     }
 
-    printf("\033[1%c", directionChar);
+    COORD cursorPosition;
+    cursorPosition.X = x;
+    cursorPosition.Y = y;
+    SetConsoleCursorPosition(hConsole, cursorPosition);
 }
