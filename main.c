@@ -5,6 +5,7 @@
 #include "appEnums.h"
 
 HANDLE hConsole;
+char filePath[2048];
 
 void terminateProgram();
 void handleKeyInput(Key key);
@@ -14,22 +15,27 @@ void setCursorPosition(int x, int y);
 
 int main(int argc, char *argv[])
 {
-    if (argv[1] == NULL)
+    strcpy(filePath, argv[1]);
+
+    if (filePath == NULL)
     {
         printf("No file path was provided\n");
         return EXIT_FAILURE;
     }
 
-    FILE *pFile = fopen(argv[1], "r");
+    FILE *pFile = fopen(filePath, "r");
     char buffer[255];
 
     if (pFile == NULL)
     {
-        printf("Unable to find file at: %s", argv[1]);
+        printf("Unable to find file at: %s", filePath);
         return EXIT_FAILURE;
     }
 
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    // Clear console
+    printf("\e[1;1H\e[2J");
 
     while (fgets(buffer, 255, pFile) != NULL)
     {
@@ -45,6 +51,7 @@ int main(int argc, char *argv[])
     while (1)
     {
         key = getch();
+        // printf("\033[H");
         handleKeyInput(key);
     }
 
@@ -104,6 +111,27 @@ void handleKeyInput(Key key)
 
     default:
         printCharacter(coord, (char)key);
+        // printf("%c", (char)key);
+
+        FILE *pFile = fopen(filePath, "r+");
+        char ch;
+        int lineCounter = 0;
+        while ((ch = fgetc(pFile)) != EOF)
+        {
+            if (lineCounter == coord.Y)
+            {
+                fseek(pFile, coord.X - 1, SEEK_CUR);
+                fputc((char)key, pFile);
+                break;
+            }
+
+            else if (ch == '\n')
+            {
+                lineCounter++;
+            }
+        }
+
+        fclose(pFile);
         break;
     }
 }
@@ -129,7 +157,7 @@ COORD getCursorPosition()
     {
         cursorPosition = bufferInfo.dwCursorPosition;
     }
-    
+
     return cursorPosition;
 }
 
