@@ -7,109 +7,43 @@
 #define MAX_LINES 1000 // Max lines the editor can handle
 #define MAX_LINE_LENGTH 256 // Max characters per line
 
-HANDLE hConsole;
-char filePath[2048];
-long fileSize = 0;
-int consoleWidth;
-int consoleHeight;
+HANDLE console_handler;
+char file_path[2048];
+long file_size = 0;
+char text[MAX_LINES][MAX_LINE_LENGTH];
+int lines_read = 0;
+
+int console_width;
+int console_height;
+
 int cursor_x = 0, cursor_y = 0; // Virtual cursor
 int top_line = 0;
-char text[MAX_LINES][MAX_LINE_LENGTH];
-int total_lines = 0;
 
 void terminateProgram();
 void handleKeyInput(Key key);
 void printCharacter(COORD coord, char ch);
 COORD getCursorPosition();
 void setCursorPosition(int x, int y);
+void loadFile();
+void getConsoleSize(int *width, int *height);
+void drawScreen();
+void moveCursorUp();
+void moveCursorDown();
 
-void loadFile()
-{
-    FILE *file = fopen(filePath, "r");
-    if (!file)
-    {
-        printf("Error: Unable to open file %s\n", filePath);
-        exit(1);
-    }
-
-    total_lines = 0;
-    while (fgets(text[total_lines], MAX_LINE_LENGTH, file) && total_lines < MAX_LINES)
-    {
-        text[total_lines][strcspn(text[total_lines], "\r\n")] = 0; // Remove new lines
-        total_lines++;
-    }
-    fclose(file);
-}
-
-void getConsoleSize(int *width, int *height)
-{
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    if (GetConsoleScreenBufferInfo(hStdOut, &csbi))
-    {
-        *width = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-        *height = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-    }
-    else
-    {
-        *width = 80; // Default fallback
-        *height = 25;
-    }
-}
-
-void draw_screen()
-{
-    getConsoleSize(&consoleWidth, &consoleHeight);
-
-    // system("cls");
-    printf("\e[1;1H\e[2J");
-    for (int i = 0; i < consoleHeight && (top_line + i) < total_lines; i++) {
-        printf("%s\n", text[top_line + i]);  
-    }
-
-    setCursorPosition(cursor_x, cursor_y - top_line); // Adjust cursor in viewport
-}
-
-void move_cursor_up() {
-    if (cursor_y > 0) {
-        cursor_y--;
-        if (cursor_y < top_line) {
-            top_line--;  // Scroll up
-            draw_screen();
-        } else {
-            setCursorPosition(cursor_x, cursor_y - top_line);
-        }
-    }
-}
-
-void move_cursor_down() {
-    if (cursor_y < total_lines - 1) {
-        cursor_y++;
-        getConsoleSize(&consoleWidth, &consoleHeight);
-
-        if (cursor_y >= top_line + consoleHeight) {
-            top_line++;  // Scroll down
-            draw_screen();
-        } else {
-            setCursorPosition(cursor_x, cursor_y - top_line);
-        }
-    }
-}
 
 int main(int argc, char *argv[])
 {
-    strcpy(filePath, argv[1]);
-    if (filePath == NULL)
+    strcpy(file_path, argv[1]);
+    if (file_path == NULL)
     {
         printf("No file path was provided\n");
         return EXIT_FAILURE;
     }
 
-    hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    console_handler = GetStdHandle(STD_OUTPUT_HANDLE);
 
     loadFile();
-    draw_screen();
+    drawScreen();
 
     int key;
 
@@ -125,7 +59,7 @@ int main(int argc, char *argv[])
 
 void terminateProgram()
 {
-    CloseHandle(hConsole);
+    CloseHandle(console_handler);
     printf("\033[u"); // Move cursor to the end of the text
     printf("\nProgram terminated by Ctrl+C\n");
     exit(EXIT_SUCCESS);
@@ -137,11 +71,11 @@ void handleKeyInput(Key key)
     switch (key)
     {
     case Up:
-        move_cursor_up();
+        moveCursorUp();
         break;
 
     case Down:
-        move_cursor_down();
+        moveCursorDown();
         break;
 
     case Right:
@@ -175,7 +109,7 @@ void handleKeyInput(Key key)
         char ch;
         int lineCounter = 0;
 
-        FILE *pFile = fopen(filePath, "r+");
+        FILE *pFile = fopen(file_path, "r+");
         while ((ch = fgetc(pFile)) != EOF)
         {
             if (lineCounter == coord.Y)
@@ -199,7 +133,7 @@ void handleKeyInput(Key key)
 void printCharacter(COORD coord, char ch)
 {
     DWORD bytesWritten;
-    FillConsoleOutputCharacter(hConsole, ch, 1, coord, &bytesWritten);
+    FillConsoleOutputCharacter(console_handler, ch, 1, coord, &bytesWritten);
     setCursorPosition(coord.X + 1, coord.Y);
 }
 
@@ -210,7 +144,7 @@ COORD getCursorPosition()
     COORD cursorPosition;
     cursorPosition.X = -10;
     cursorPosition.Y = -10;
-    if (GetConsoleScreenBufferInfo(hConsole, &bufferInfo))
+    if (GetConsoleScreenBufferInfo(console_handler, &bufferInfo))
     {
         cursorPosition = bufferInfo.dwCursorPosition;
     }
@@ -228,5 +162,79 @@ void setCursorPosition(int x, int y)
     COORD cursorPosition;
     cursorPosition.X = x;
     cursorPosition.Y = y;
-    SetConsoleCursorPosition(hConsole, cursorPosition);
+    SetConsoleCursorPosition(console_handler, cursorPosition);
+}
+
+void loadFile()
+{
+    FILE *pFile = fopen(file_path, "r");
+    if (!pFile)
+    {
+        printf("Error: Unable to open file %s\n", file_path);
+        exit(EXIT_FAILURE);
+    }
+
+    lines_read = 0;
+    while (fgets(text[lines_read], MAX_LINE_LENGTH, pFile) && lines_read < MAX_LINES)
+    {
+        text[lines_read][strcspn(text[lines_read], "\r\n")] = 0; // Remove new lines
+        lines_read++;
+    }
+    fclose(pFile);
+}
+
+void getConsoleSize(int *width, int *height)
+{
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    if (GetConsoleScreenBufferInfo(hStdOut, &csbi))
+    {
+        *width = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+        *height = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+    }
+    else
+    {
+        *width = 80; // Default fallback
+        *height = 25;
+    }
+}
+
+void drawScreen()
+{
+    getConsoleSize(&console_width, &console_height);
+
+    // system("cls");
+    printf("\e[1;1H\e[2J");
+    for (int i = 0; i < console_height && (top_line + i) < lines_read; i++) {
+        printf("%s\n", text[top_line + i]);  
+    }
+
+    setCursorPosition(cursor_x, cursor_y - top_line); // Adjust cursor in viewport
+}
+
+void moveCursorUp() {
+    if (cursor_y > 0) {
+        cursor_y--;
+        if (cursor_y < top_line) {
+            top_line--;  // Scroll up
+            drawScreen();
+        } else {
+            setCursorPosition(cursor_x, cursor_y - top_line);
+        }
+    }
+}
+
+void moveCursorDown() {
+    if (cursor_y < lines_read - 1) {
+        cursor_y++;
+        getConsoleSize(&console_width, &console_height);
+
+        if (cursor_y >= top_line + console_height) {
+            top_line++;  // Scroll down
+            drawScreen();
+        } else {
+            setCursorPosition(cursor_x, cursor_y - top_line);
+        }
+    }
 }
