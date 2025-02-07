@@ -4,7 +4,7 @@
 #include <windows.h>
 #include "appEnums.h"
 
-#define MAX_LINES 1000 // Max lines the editor can handle
+#define MAX_LINES 1000      // Max lines the editor can handle
 #define MAX_LINE_LENGTH 256 // Max characters per line
 
 HANDLE console_handler;
@@ -30,6 +30,46 @@ void drawScreen();
 void moveCursorUp();
 void moveCursorDown();
 
+void insertChar(int row, char ch, int pos)
+{
+    // char result[strlen(text[row]) + 1];
+    // strcpy(result, text[row]);
+    int length = 0;
+
+    while (text[row][length] != '\0')
+    {
+        length++;
+    }
+
+    if (length == MAX_LINE_LENGTH)
+    {
+        // No more space in this line
+        return;
+    }
+
+    // for (int i = pos + 1; i < length + 1; i++)
+    // {
+    //     text[row][i] = result[i - 1];
+    // }
+
+    // text[row][pos] = ch;
+
+    char result_start[length + 1];
+    strncpy(result_start, text[row], pos);
+    // strcat(result_start, &ch);
+    result_start[pos] = ch;
+
+    // There is something to append
+    if (length != pos)
+    {
+        char result_end[length - pos];
+        strncpy(result_end, text[row] + pos, length - pos);
+        strcpy(result_start + pos + 1, result_end);
+    }
+
+    // strcat(result_start, result_end);
+    strncpy(text[row], result_start, length + 1);
+}
 
 int main(int argc, char *argv[])
 {
@@ -79,11 +119,15 @@ void handleKeyInput(Key key)
         break;
 
     case Right:
-        setCursorPosition(coord.X + 1, coord.Y);
+        cursor_x++;
+        setCursorPosition(cursor_x, cursor_y);
+        drawScreen();
         break;
 
     case Left:
-        setCursorPosition(coord.X - 1, coord.Y);
+        cursor_x--;
+        setCursorPosition(cursor_x, cursor_y);
+        drawScreen();
         break;
 
     case CtrlC:
@@ -104,28 +148,34 @@ void handleKeyInput(Key key)
         break;
 
     default:
-        printCharacter(coord, (char)key);
+        // printf("%d - %d", cursor_x, cursor_y);
+        insertChar(cursor_y + 1, (char)key, cursor_x);
+        cursor_x++;
+        drawScreen();
+        // cursor_x++;
+        // setCursorPosition(cursor_x, cursor_y);
+        // printCharacter(coord, (char)key);
 
-        char ch;
-        int lineCounter = 0;
+        // char ch;
+        // int lineCounter = 0;
 
-        FILE *pFile = fopen(file_path, "r+");
-        while ((ch = fgetc(pFile)) != EOF)
-        {
-            if (lineCounter == coord.Y)
-            {
-                fseek(pFile, coord.X - 1, SEEK_CUR);
-                fputc((char)key, pFile);
-                break;
-            }
+        // FILE *pFile = fopen(file_path, "r+");
+        // while ((ch = fgetc(pFile)) != EOF)
+        // {
+        //     if (lineCounter == coord.Y)
+        //     {
+        //         fseek(pFile, coord.X - 1, SEEK_CUR);
+        //         fputc((char)key, pFile);
+        //         break;
+        //     }
 
-            else if (ch == '\n')
-            {
-                lineCounter++;
-            }
-        }
+        //     else if (ch == '\n')
+        //     {
+        //         lineCounter++;
+        //     }
+        // }
 
-        fclose(pFile);
+        // fclose(pFile);
         break;
     }
 }
@@ -174,7 +224,8 @@ void loadFile()
         exit(EXIT_FAILURE);
     }
 
-    lines_read = 0;
+    lines_read = 1;
+    strcpy(text[0], "");
     while (fgets(text[lines_read], MAX_LINE_LENGTH, pFile) && lines_read < MAX_LINES)
     {
         text[lines_read][strcspn(text[lines_read], "\r\n")] = 0; // Remove new lines
@@ -206,34 +257,45 @@ void drawScreen()
 
     // system("cls");
     printf("\e[1;1H\e[2J");
-    for (int i = 0; i < console_height && (top_line + i) < lines_read; i++) {
-        printf("%s\n", text[top_line + i]);  
+    for (int i = 0; i < console_height && (top_line + i) < lines_read; i++)
+    {
+        printf("%s\n", text[top_line + i]);
     }
 
     setCursorPosition(cursor_x, cursor_y - top_line); // Adjust cursor in viewport
 }
 
-void moveCursorUp() {
-    if (cursor_y > 0) {
+void moveCursorUp()
+{
+    if (cursor_y > 0)
+    {
         cursor_y--;
-        if (cursor_y < top_line) {
-            top_line--;  // Scroll up
+        if (cursor_y < top_line)
+        {
+            top_line--; // Scroll up
             drawScreen();
-        } else {
+        }
+        else
+        {
             setCursorPosition(cursor_x, cursor_y - top_line);
         }
     }
 }
 
-void moveCursorDown() {
-    if (cursor_y < lines_read - 1) {
+void moveCursorDown()
+{
+    if (cursor_y < lines_read - 1)
+    {
         cursor_y++;
         getConsoleSize(&console_width, &console_height);
 
-        if (cursor_y >= top_line + console_height) {
-            top_line++;  // Scroll down
+        if (cursor_y >= top_line + console_height)
+        {
+            top_line++; // Scroll down
             drawScreen();
-        } else {
+        }
+        else
+        {
             setCursorPosition(cursor_x, cursor_y - top_line);
         }
     }
