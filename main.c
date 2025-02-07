@@ -30,7 +30,7 @@ void drawScreen();
 void moveCursorUp();
 void moveCursorDown();
 
-void insertChar(int row, char ch, int pos)
+void insertChar(int row, int pos, char ch)
 {
     // char result[strlen(text[row]) + 1];
     // strcpy(result, text[row]);
@@ -69,6 +69,53 @@ void insertChar(int row, char ch, int pos)
 
     // strcat(result_start, result_end);
     strncpy(text[row], result_start, length + 1);
+}
+
+void removeChar(int row, int pos, Key key)
+{
+    if (key == Backspace && pos == 0)
+    {
+        // Begiining of the line nothing to remove
+        return;
+    }
+
+    int length = 0;
+
+    while (text[row][length] != '\0')
+    {
+        length++;
+    }
+
+    if (key == Delete && pos == length)
+    {
+        // End of line nothing to delete
+        return;
+    }
+
+    // if (length == 0)
+    // {
+    //     // No characters to remove
+    //     return;
+    // }
+
+    char result_start[length - 1];
+    char result_end[length - pos - 1];
+    if (key == Backspace)
+    {
+        strncpy(result_start, text[row], pos - 1);
+        strncpy(result_end, text[row] + pos, length - pos);
+    }
+
+    else if (key == Delete)
+    {
+        strncpy(result_start, text[row], pos);
+        strncpy(result_end, text[row] + pos + 1, length - pos - 1);
+    }
+
+    strcat(result_start, result_end);
+    strncpy(text[row], result_start, length - 1);
+    text[row][length - 1] = '\000';
+    printf("\033[P");
 }
 
 int main(int argc, char *argv[])
@@ -125,9 +172,12 @@ void handleKeyInput(Key key)
         break;
 
     case Left:
-        cursor_x--;
-        setCursorPosition(cursor_x, cursor_y);
-        drawScreen();
+        if (cursor_x > 0)
+        {
+            cursor_x--;
+            setCursorPosition(cursor_x, cursor_y);
+            drawScreen();
+        }
         break;
 
     case CtrlC:
@@ -135,12 +185,16 @@ void handleKeyInput(Key key)
         break;
 
     case Delete:
-        printf("\033[P");
+        removeChar(cursor_y + 1, cursor_x, Delete);
         break;
 
     case Backspace:
-        printf("\033[1D");
-        printf("\033[P");
+        if (cursor_x > 0)
+        {
+            removeChar(cursor_y + 1, cursor_x, Backspace);
+            cursor_x--;
+            setCursorPosition(cursor_x, cursor_y);
+        }
         break;
 
     case 224:
@@ -149,7 +203,7 @@ void handleKeyInput(Key key)
 
     default:
         // printf("%d - %d", cursor_x, cursor_y);
-        insertChar(cursor_y + 1, (char)key, cursor_x);
+        insertChar(cursor_y + 1, cursor_x, (char)key);
         cursor_x++;
         drawScreen();
         // cursor_x++;
