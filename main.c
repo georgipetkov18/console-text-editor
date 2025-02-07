@@ -31,6 +31,7 @@ void moveCursorUp();
 void moveCursorDown();
 void insertChar(int row, int pos, char ch);
 void removeChar(int row, int pos, Key key);
+void writeToFile();
 
 int main(int argc, char *argv[])
 {
