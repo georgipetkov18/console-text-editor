@@ -8,5 +8,6 @@ typedef enum
     Right = 77,
     CtrlC = 3,
     Delete = 83,
-    Backspace = 8
+    Backspace = 8,
+    CtrlS = 19,
 } Key;
