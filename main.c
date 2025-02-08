@@ -83,7 +83,6 @@ void handleKeyInput(Key key)
     case Right:
         cursor_x++;
         setCursorPosition(cursor_x, cursor_y);
-        drawScreen();
         break;
 
     case Left:
@@ -91,7 +90,6 @@ void handleKeyInput(Key key)
         {
             cursor_x--;
             setCursorPosition(cursor_x, cursor_y);
-            drawScreen();
         }
         break;
 
