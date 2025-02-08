@@ -125,8 +125,14 @@ void handleKeyInput(Key key)
 
     default:
         insertChar(cursor_y + 1, cursor_x, (char)key);
+        for (int i = 0; i < strlen(text[cursor_y + 1]); i++)
+        {
+            COORD coord = {i, cursor_y};
+            printCharacter(coord, text[cursor_y + 1][i]);
+        }
+
         cursor_x++;
-        drawScreen();
+        setCursorPosition(cursor_x, cursor_y);
         break;
     }
 }
@@ -336,7 +342,7 @@ void removeChar(int row, int pos, Key key)
 void writeToFile()
 {
     FILE *pFile = fopen(file_path, "w");
-    
+
     // Skip first row because it is a dummy one - empty line
     for (int i = 1; i < file_lines; i++)
     {
