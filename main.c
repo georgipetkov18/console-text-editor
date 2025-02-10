@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <conio.h>
 #include <windows.h>
+#include <ctype.h>
 #include "appEnums.h"
 
 #define MAX_LINES 1000      // Max lines the editor can handle
@@ -20,8 +21,8 @@ int cursor_x = 0, cursor_y = 0; // Virtual cursor
 int top_line = 0;
 
 void terminateProgram();
-void handleKeyInput(Key key);
-void printCharacter(COORD coord, char ch);
+void handleKeyInput(Key key, BOOL *expectLetter);
+void printChar(COORD coord, char ch);
 COORD getCursorPosition();
 void setCursorPosition(int x, int y);
 void loadFile();
@@ -48,12 +49,13 @@ int main(int argc, char *argv[])
     drawScreen();
 
     int key;
+    BOOL expectLetter = TRUE;
 
     printf("\033[s"); // Save cursor positon at the end of the text
     while (1)
     {
         key = getch();
-        handleKeyInput(key);
+        handleKeyInput(key, &expectLetter);
     }
 
     return EXIT_SUCCESS;
@@ -67,22 +69,45 @@ void terminateProgram()
     exit(EXIT_SUCCESS);
 }
 
-void handleKeyInput(Key key)
+void handleKeyInput(Key key, BOOL *expectLetter)
 {
     COORD coord = getCursorPosition();
+    if (*expectLetter && (isalpha((char)key) || isdigit((char)key) || key == Space))
+    {
+        insertChar(cursor_y + 1, cursor_x, (char)key);
+        int length = 0;
+
+        // while (text[cursor_y + 1][length] != '\0')
+        // {
+        //     length++;
+        // }
+        for (int i = 0; i < strlen(text[cursor_y + 1]); i++)
+        {
+            COORD coord = {i, cursor_y};
+            printChar(coord, text[cursor_y + 1][i]);
+        }
+
+        cursor_x++;
+        setCursorPosition(cursor_x, cursor_y);
+        return;
+    }
+
     switch (key)
     {
     case Up:
         moveCursorUp();
+        *expectLetter = TRUE;
         break;
 
     case Down:
         moveCursorDown();
+        *expectLetter = TRUE;
         break;
 
     case Right:
         cursor_x++;
         setCursorPosition(cursor_x, cursor_y);
+        *expectLetter = TRUE;
         break;
 
     case Left:
@@ -90,6 +115,7 @@ void handleKeyInput(Key key)
         {
             cursor_x--;
             setCursorPosition(cursor_x, cursor_y);
+            *expectLetter = TRUE;
         }
         break;
 
@@ -100,6 +126,7 @@ void handleKeyInput(Key key)
     case Delete:
         removeChar(cursor_y + 1, cursor_x, Delete);
         printf("\033[P");
+        *expectLetter = TRUE;
         break;
 
     case Backspace:
@@ -110,6 +137,7 @@ void handleKeyInput(Key key)
             setCursorPosition(cursor_x, cursor_y);
             printf("\033[P");
         }
+        *expectLetter = TRUE;
         break;
 
     case CtrlS:
@@ -118,24 +146,15 @@ void handleKeyInput(Key key)
         break;
 
     case 224:
-
+        *expectLetter = FALSE;
         break;
 
     default:
-        insertChar(cursor_y + 1, cursor_x, (char)key);
-        for (int i = 0; i < strlen(text[cursor_y + 1]); i++)
-        {
-            COORD coord = {i, cursor_y};
-            printCharacter(coord, text[cursor_y + 1][i]);
-        }
-
-        cursor_x++;
-        setCursorPosition(cursor_x, cursor_y);
         break;
     }
 }
 
-void printCharacter(COORD coord, char ch)
+void printChar(COORD coord, char ch)
 {
     DWORD bytesWritten;
     FillConsoleOutputCharacter(console_handler, ch, 1, coord, &bytesWritten);
@@ -319,7 +338,7 @@ void removeChar(int row, int pos, Key key)
     }
 
     char result_start[length - 1];
-    char result_end[length - pos - 1];
+    char result_end[length - pos];
     if (key == Backspace)
     {
         strncpy(result_start, text[row], pos - 1);

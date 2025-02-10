@@ -10,4 +10,5 @@ typedef enum
     Delete = 83,
     Backspace = 8,
     CtrlS = 19,
+    Space = 32,
 } Key;
