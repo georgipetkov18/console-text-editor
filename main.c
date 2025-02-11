@@ -34,6 +34,7 @@ void insertChar(int row, int pos, char ch);
 void removeChar(int row, int pos, Key key);
 void writeToFile();
 int getLength(char string[]);
+void fixCursorXPosition(int *x);
 
 int main(int argc, char *argv[])
 {
@@ -177,6 +178,8 @@ void setCursorPosition(int x, int y)
     {
         return;
     }
+
+    fixCursorXPosition(&x);
 
     COORD cursorPosition;
     cursorPosition.X = x;
@@ -359,4 +362,15 @@ int getLength(char string[])
     }
 
     return length;
+}
+
+void fixCursorXPosition(int *x)
+{
+    // Move cursor to the end of the current line and not outside of it
+    int length = getLength(text[cursor_y]);
+    if (cursor_x > length)
+    {
+        cursor_x = length;
+        *x = length;
+    }
 }
