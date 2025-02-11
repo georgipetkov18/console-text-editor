@@ -226,7 +226,6 @@ void drawScreen()
 {
     getConsoleSize(&console_width, &console_height);
 
-    // system("cls");
     printf("\e[1;1H\e[2J");
     for (int i = 0; i < console_height && (top_line + i) < file_lines; i++)
     {
@@ -282,8 +281,6 @@ void moveCursorDown()
 
 void insertChar(int row, int pos, char ch)
 {
-    // char result[strlen(text[row]) + 1];
-    // strcpy(result, text[row]);
     int length = 0;
 
     while (text[row][length] != '\0')
@@ -297,16 +294,8 @@ void insertChar(int row, int pos, char ch)
         return;
     }
 
-    // for (int i = pos + 1; i < length + 1; i++)
-    // {
-    //     text[row][i] = result[i - 1];
-    // }
-
-    // text[row][pos] = ch;
-
     char result_start[length + 1];
     strncpy(result_start, text[row], pos);
-    // strcat(result_start, &ch);
     result_start[pos] = ch;
 
     // There is something to append
@@ -317,7 +306,6 @@ void insertChar(int row, int pos, char ch)
         strcpy(result_start + pos + 1, result_end);
     }
 
-    // strcat(result_start, result_end);
     strncpy(text[row], result_start, length + 1);
 }
 
@@ -325,7 +313,7 @@ void removeChar(int row, int pos, Key key)
 {
     if (key == Backspace && pos == 0)
     {
-        // Begiining of the line nothing to remove
+        // Beginning of the line nothing to remove
         return;
     }
 
