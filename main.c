@@ -84,12 +84,12 @@ void handleKeyInput(Key key, BOOL *expectLetter)
         }
         for (int i = 0; i < length; i++)
         {
-            COORD coord = {i, cursor_y};
+            COORD coord = {i, cursor_y - top_line};
             printChar(coord, text[cursor_y][i]);
         }
 
         cursor_x++;
-        setCursorPosition(cursor_x, cursor_y);
+        setCursorPosition(cursor_x, cursor_y - top_line);
         return;
     }
 
@@ -135,7 +135,7 @@ void handleKeyInput(Key key, BOOL *expectLetter)
         {
             removeChar(cursor_y, cursor_x, Backspace);
             cursor_x--;
-            setCursorPosition(cursor_x, cursor_y);
+            setCursorPosition(cursor_x, cursor_y - top_line);
             printf("\033[P");
         }
         *expectLetter = TRUE;
@@ -368,8 +368,7 @@ void writeToFile()
 {
     FILE *pFile = fopen(file_path, "w");
 
-    // Skip first row because it is a dummy one - empty line
-    for (int i = 1; i < file_lines; i++)
+    for (int i = 0; i < file_lines; i++)
     {
         fprintf(pFile, text[i]);
         fprintf(pFile, "\n");
