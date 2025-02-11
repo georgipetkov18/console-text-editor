@@ -34,7 +34,6 @@ void insertChar(int row, int pos, char ch);
 void removeChar(int row, int pos, Key key);
 void writeToFile();
 
-
 int main(int argc, char *argv[])
 {
     strcpy(file_path, argv[1]);
@@ -52,7 +51,6 @@ int main(int argc, char *argv[])
     int key;
     BOOL expectLetter = TRUE;
 
-    printf("\033[s"); // Save cursor positon at the end of the text
     while (1)
     {
         key = getch();
@@ -64,9 +62,8 @@ int main(int argc, char *argv[])
 
 void terminateProgram()
 {
+    setCursorPosition(cursor_x, console_height - 1);
     CloseHandle(console_handler);
-    printf("\033[u"); // Move cursor to the end of the text
-    // printf("\nProgram terminated by Ctrl+C\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -120,10 +117,6 @@ void handleKeyInput(Key key, BOOL *expectLetter)
         }
         break;
 
-    case CtrlC:
-        terminateProgram();
-        break;
-
     case Delete:
         removeChar(cursor_y, cursor_x, Delete);
         printf("\033[P");
@@ -139,6 +132,10 @@ void handleKeyInput(Key key, BOOL *expectLetter)
             printf("\033[P");
         }
         *expectLetter = TRUE;
+        break;
+
+    case CtrlC:
+        terminateProgram();
         break;
 
     case CtrlS:
