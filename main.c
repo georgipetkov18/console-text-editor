@@ -33,6 +33,7 @@ void moveCursorDown();
 void insertChar(int row, int pos, char ch);
 void removeChar(int row, int pos, Key key);
 void writeToFile();
+int getLength(char string[]);
 
 int main(int argc, char *argv[])
 {
@@ -73,12 +74,8 @@ void handleKeyInput(Key key, BOOL *expectLetter)
     if (*expectLetter && (isalpha((char)key) || isdigit((char)key) || key == Space))
     {
         insertChar(cursor_y, cursor_x, (char)key);
-        int length = 0;
+        int length = getLength(text[cursor_y]);
 
-        while (text[cursor_y][length] != '\0')
-        {
-            length++;
-        }
         for (int i = 0; i < length; i++)
         {
             COORD coord = {i, cursor_y - top_line};
@@ -281,12 +278,7 @@ void moveCursorDown()
 
 void insertChar(int row, int pos, char ch)
 {
-    int length = 0;
-
-    while (text[row][length] != '\0')
-    {
-        length++;
-    }
+    int length = getLength(text[row]);
 
     if (length == MAX_LINE_LENGTH)
     {
@@ -317,12 +309,7 @@ void removeChar(int row, int pos, Key key)
         return;
     }
 
-    int length = 0;
-
-    while (text[row][length] != '\0')
-    {
-        length++;
-    }
+    int length = getLength(text[row]);
 
     if (key == Delete && pos == length)
     {
@@ -360,4 +347,16 @@ void writeToFile()
     }
 
     fclose(pFile);
+}
+
+int getLength(char string[])
+{
+    int length = 0;
+
+    while (string[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
 }
