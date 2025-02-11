@@ -34,6 +34,7 @@ void insertChar(int row, int pos, char ch);
 void removeChar(int row, int pos, Key key);
 void writeToFile();
 
+
 int main(int argc, char *argv[])
 {
     strcpy(file_path, argv[1]);
@@ -74,17 +75,17 @@ void handleKeyInput(Key key, BOOL *expectLetter)
     COORD coord = getCursorPosition();
     if (*expectLetter && (isalpha((char)key) || isdigit((char)key) || key == Space))
     {
-        insertChar(cursor_y + 1, cursor_x, (char)key);
+        insertChar(cursor_y, cursor_x, (char)key);
         int length = 0;
 
-        // while (text[cursor_y + 1][length] != '\0')
-        // {
-        //     length++;
-        // }
-        for (int i = 0; i < strlen(text[cursor_y + 1]); i++)
+        while (text[cursor_y][length] != '\0')
+        {
+            length++;
+        }
+        for (int i = 0; i < length; i++)
         {
             COORD coord = {i, cursor_y};
-            printChar(coord, text[cursor_y + 1][i]);
+            printChar(coord, text[cursor_y][i]);
         }
 
         cursor_x++;
@@ -106,7 +107,7 @@ void handleKeyInput(Key key, BOOL *expectLetter)
 
     case Right:
         cursor_x++;
-        setCursorPosition(cursor_x, cursor_y);
+        setCursorPosition(cursor_x, cursor_y - top_line);
         *expectLetter = TRUE;
         break;
 
@@ -114,7 +115,7 @@ void handleKeyInput(Key key, BOOL *expectLetter)
         if (cursor_x > 0)
         {
             cursor_x--;
-            setCursorPosition(cursor_x, cursor_y);
+            setCursorPosition(cursor_x, cursor_y - top_line);
             *expectLetter = TRUE;
         }
         break;
@@ -124,7 +125,7 @@ void handleKeyInput(Key key, BOOL *expectLetter)
         break;
 
     case Delete:
-        removeChar(cursor_y + 1, cursor_x, Delete);
+        removeChar(cursor_y, cursor_x, Delete);
         printf("\033[P");
         *expectLetter = TRUE;
         break;
@@ -132,7 +133,7 @@ void handleKeyInput(Key key, BOOL *expectLetter)
     case Backspace:
         if (cursor_x > 0)
         {
-            removeChar(cursor_y + 1, cursor_x, Backspace);
+            removeChar(cursor_y, cursor_x, Backspace);
             cursor_x--;
             setCursorPosition(cursor_x, cursor_y);
             printf("\033[P");
@@ -198,8 +199,7 @@ void loadFile()
         exit(EXIT_FAILURE);
     }
 
-    file_lines = 1;
-    strcpy(text[0], "");
+    file_lines = 0;
     while (fgets(text[file_lines], MAX_LINE_LENGTH, pFile) && file_lines < MAX_LINES)
     {
         text[file_lines][strcspn(text[file_lines], "\r\n")] = 0; // Remove new lines
@@ -233,7 +233,15 @@ void drawScreen()
     printf("\e[1;1H\e[2J");
     for (int i = 0; i < console_height && (top_line + i) < file_lines; i++)
     {
-        printf("%s\n", text[top_line + i]);
+        // Last line so do not print \n
+        if (i == console_height - 1 || (top_line + i) == file_lines - 1)
+        {
+            printf("%s", text[top_line + i]);
+        }
+        else
+        {
+            printf("%s\n", text[top_line + i]);
+        }
     }
 
     setCursorPosition(cursor_x, cursor_y - top_line); // Adjust cursor in viewport
